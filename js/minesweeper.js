@@ -1,5 +1,6 @@
 
 var time = 0;
+var time_id;
 var columns = 9;
 var rows = 9;
 var mineCount = 10;
@@ -7,7 +8,6 @@ var grid = document.getElementById("minefield");
 var firstTouch = true;
 var smiley;
 var remaining = mineCount;
-var gridAdj= [];
 
 function buildGrid() {
 
@@ -17,7 +17,6 @@ function buildGrid() {
 	document.getElementById("flagCount").innerHTML = remaining;
 	firstTouch = true;
 	remaining = mineCount;
-	gridAdj= [];
     // Build DOM Grid
     var tile;
     for (var y = 0; y < rows; y++) {
@@ -42,6 +41,7 @@ function createTile(x,y) {
 
     tile.classList.add("tile");
     tile.classList.add("hidden");
+	tile.classList.add("adjacent");
     
     tile.addEventListener("auxclick", function(e) { e.preventDefault(); }); // Middle Click
     tile.addEventListener("contextmenu", function(e) { e.preventDefault(); }); // Right Click
@@ -65,28 +65,124 @@ function smileyUp() {
     smiley.classList.remove("face_down");
 }
 
+function fillTiles (tile) {
+	
+	 if (tile.classList.contains("flag") || (!tile.classList.contains("hidden"))) { return; }
+	 else
+	 {
+	tile.classList.remove("hidden");
+	if (tile.style.adjacent == 1) {tile.classList.add("tile_1");}
+	if (tile.style.adjacent == 2) {tile.classList.add("tile_2");}
+	if (tile.style.adjacent == 3) {tile.classList.add("tile_3");}
+	if (tile.style.adjacent == 4) {tile.classList.add("tile_4");}
+	if (tile.style.adjacent == 5) {tile.classList.add("tile_5");}
+	if (tile.style.adjacent == 6) {tile.classList.add("tile_6");}
+	if (tile.style.adjacent == 7) {tile.classList.add("tile_7");}
+	if (tile.style.adjacent == 8) {tile.classList.add("tile_8");}
+ 	if (tile.style.adjacent==0)
+	{
+		var areaF = areaAdjacent(tile);
+		for (var i = 0; i < areaF.length; i++)
+		{
+			if (areaF[i].style.adjacent==0 || !areaF[i].classList.contains("hasMine"))
+			{
+				fillTiles(areaF[i]);
+				document.getElementById("flagCount").innerHTML = areaF.length;
+			}
+		}
+	}	
+	 }
+ }
+function areaAdjacent(tile) //5     4,6,14,13,15
+{
+	var children = grid.children;
+	var x=0;
+	for (var i = 0; i <rows*columns;i++) {
+		if (children[i] == tile) {
+			x = i;
+		}
+	}
+	var result = [];
+	// traverse left
+	if (x % columns != 0){	result.push(children[x-1]);	}	
+	// traverse right
+	if ((x+1) % columns != 0 )	{result.push(children[x+1]);}
+	// traverse top
+	if (x >= columns)	{result.push(children[x-9]);}
+	// traverse bottom
+	if (x < (rows*columns - columns)){result.push(children[x+9]);}
+	// traverse upper left
+	if (x % columns != 0 && x > columns)	{result.push(children[x-10]);}
+	// traverse lower left
+	if (x % columns != 0 && x < (rows*columns - columns)){result.push(children[x + 8]);}
+	// traverse upper right
+	if ((x+1) % columns != 0 && x >= columns){result.push(children[x -8]);}
+	// traverse lower right
+	if ((x+1) % columns != 0 && x < (rows*columns - columns))	{result.push(children[x +10]);}
+	
+	return result;
+}
+
+
 function handleTileClick(event) {
 
     // Left Click
     if (event.which === 1) {
         //TODO reveal the tile
-		if (firstTouch) {
-			plantMines(this);
-			//index = grid.indexOf(this);
-			document.getElementById("flagCount").innerHTML = 2;
-			if (gridAdj[index] == 1) {this.classList.add("tile_1");}
+		var x=0;
+		var children = grid.children;
+		for (var i = 0; i <rows*columns;i++) {
+			if (children[i] == this) {
+				x = i;
+			}
+		}
+		if (firstTouch) {	
+			smiley.classList.add("face_limbo");
+			plantMines(this,x);
+			fillTiles(this);
+			//document.getElementById("flagCount").innerHTML = x;
 		}
 		else {
-			if (!this.classList.contains("flag") || !this.classList.contains("tile_1")|| !this.classList.contains("tile_2")
-				|| !this.classList.contains("tile_3")|| !this.classList.contains("tile_4")
-			|| !this.classList.contains("tile_5")|| !this.classList.contains("tile_6")
-			|| !this.classList.contains("tile_7")|| !this.classList.contains("tile_8"))
+			if (!this.classList.contains("flag") && !this.classList.contains("tile_1")&& !this.classList.contains("tile_2")
+				&& !this.classList.contains("tile_3")&& !this.classList.contains("tile_4")
+			&& !this.classList.contains("tile_5")&& !this.classList.contains("tile_6")
+			&& !this.classList.contains("tile_7")&& !this.classList.contains("tile_8"))
 			{
 				if (this.classList.contains("hasMine"))
 				{
-					this.classList.toggle("mine_hit");
+					this.classList.add("mine_hit");
+					stopTimer();
 					smiley.classList.add("face_lose");
+					for (var i = 0; i <rows*columns;i++) {
+						children[i].classList.remove("hidden");
+						if (children[i].classList.contains("hasMine") && this!=children[i]) {
+							children[i].classList.add("mine");
+						}
+						if (children[i].style.adjacent == 1) {children[i].classList.add("tile_1");}
+						if (children[i].style.adjacent == 2) {children[i].classList.add("tile_2");}
+						if (children[i].style.adjacent == 3) {children[i].classList.add("tile_3");}
+						if (children[i].style.adjacent == 4) {children[i].classList.add("tile_4");}
+						if (children[i].style.adjacent == 5) {children[i].classList.add("tile_5");}
+						if (children[i].style.adjacent == 6) {children[i].classList.add("tile_6");}
+						if (children[i].style.adjacent == 7) {children[i].classList.add("tile_7");}
+						if (children[i].style.adjacent == 8) {children[i].classList.add("tile_8");}
+							
+					}
 				}
+				else{
+					fillTiles(this);
+					document.getElementById("flagCount").innerHTML = firstTouch;
+					/* if (this.style.adjacent == 0) {this.classList.remove("hidden");}
+					if (this.style.adjacent == 0 && this.classList.contains("hidden")) {this.classList.remove("hidden");}
+					if (this.style.adjacent == 1) {this.classList.add("tile_1");}
+					if (this.style.adjacent == 2) {this.classList.add("tile_2");}
+					if (this.style.adjacent == 3) {this.classList.add("tile_3");}
+					if (this.style.adjacent == 4) {this.classList.add("tile_4");}
+					if (this.style.adjacent == 5) {this.classList.add("tile_5");}
+					if (this.style.adjacent == 6) {this.classList.add("tile_6");}
+					if (this.style.adjacent == 7) {this.classList.add("tile_7");}
+					if (this.style.adjacent == 8) {this.classList.add("tile_8");}
+ */				}
 			}
 		}
 		firstTouch = false;
@@ -99,8 +195,13 @@ function handleTileClick(event) {
     // Right Click
     else if (event.which === 3) {
         //TODO toggle a tile flag
+		if (this.classList.contains("flag")) {
+			remaining =remaining+1;	
+		}
+		else {
+			remaining =remaining-1;
+		}
 		this.classList.toggle("flag");
-		remaining =remaining-1;
 		document.getElementById("flagCount").innerHTML = remaining;
     }
 }
@@ -111,42 +212,62 @@ function getRandomNumber(max)
     return Math.floor((Math.random() * max));
 }
 
-function plantMines(picked)
+function plantMines(picked,index)
 {
 	var	minesPlanted = 0
-	var x;
+	var ran;
 	var children = grid.children;
 
     while (minesPlanted < mineCount)
     {
-        x = getRandomNumber(rows*columns);
-
-        if (!children[x].classList.contains("hasMine") || picked !=children[x])
+        ran = getRandomNumber(rows*columns);
+		
+        if (!children[ran].classList.contains("hasMine") && picked !=children[ran])
         {
-            children[x].classList.add("hasMine");
-            minesPlanted++;
+			if (ran!=(index-1) && ran!=(index+1)&& ran!=(index-9)&& ran!=(index+9)&& ran!=(index-10)&& ran!=(index-8)&& ran!=(index+8)&& ran!=(index+10)) {
+				children[ran].classList.add("hasMine");
+				minesPlanted++;
+			}
         }
     }
-
+	//document.getElementById("flagCount").innerHTML = minesPlanted;
 	scoreAdjacent();
 }
 function scoreAdjacent()
 {
 	var children = grid.children;
-	gridAdj =[]
 	for (var y = 0; y < rows*columns; y=y+columns) {
 		for (var x = 0; x < columns; x++) {
-			var counter = 0;
+			var cen = 0;
+			children[x+y].style.adjacent = cen;
 			if (!children[x+y].classList.contains("hasMine")) {
-			//if (y == 0 || y==rows*columns-1)  {//will fail for hard 
-			
-			//if(children[x+y+1].classList.contains("hasMine")) {counter++;} //Right
-			//if(children[x+y+9].classList.contains("hasMine")) {counter++;} //Bottom
-			//}
-			//if (x==0 || x==columns-1) {
-				
-			//}
-				if (y>0 && x>0 && y<(rows*columns-9) && x < (columns-1)) {
+				var areaF = areaAdjacent(children[x+y],x+y);
+				for (var f=0;f<areaF.length;f++) {
+					if (areaF[f].classList.contains("hasMine")) {cen++;}
+					//counter++;
+				}
+				if (cen != 0) {
+					children[x+y].style.adjacent =cen; 
+				}
+				//children[x+y].style.adjacent = counter;
+/*  				if (y == 0 && x==0)  { 
+					if(children[x+y+1].classList.contains("hasMine")) {counter++;} //Right
+					if(children[x+y+9].classList.contains("hasMine")) {counter++;} //Bottom
+					if(children[x+y+10].classList.contains("hasMine")) {counter++;} //Bottom Right
+				}
+				else if (y==0 && x> 0 && x<(columns-1)) {
+					if(children[x+y-1].classList.contains("hasMine")) {counter++;} //left
+					if(children[x+y+1].classList.contains("hasMine")) {counter++;} //Right
+					if(children[x+y+9].classList.contains("hasMine")) {counter++;} //Bottom
+					if(children[x+y+8].classList.contains("hasMine")) {counter++;} //Bottom Left
+					if(children[x+y+10].classList.contains("hasMine")) {counter++;} //Bottom Right
+				}
+				else if (y==0 && x==(columns-1)) {
+					if(children[x+y-1].classList.contains("hasMine")) {counter++;} //left
+					if(children[x+y+9].classList.contains("hasMine")) {counter++;} //Bottom
+					if(children[x+y+8].classList.contains("hasMine")) {counter++;} //Bottom Left
+				}
+				else if (y>0 && x>0 && y<(rows*columns-9) && x < (columns-1)) {
 					if(children[x+y-1].classList.contains("hasMine")) {counter++;} //left
 					if(children[x+y+1].classList.contains("hasMine")) {counter++;} //Right
 					if(children[x+y-9].classList.contains("hasMine")) {counter++;} //Top
@@ -156,24 +277,40 @@ function scoreAdjacent()
 					if(children[x+y+8].classList.contains("hasMine")) {counter++;} //Bottom Left
 					if(children[x+y+10].classList.contains("hasMine")) {counter++;} //Bottom Right
 					
-/* 					
-					if (counter ==1) { children[x+y].classList.add("tile_1")}
-					if (counter ==2) { children[x+y].classList.add("tile_2")}
-					if (counter ==3) { children[x+y].classList.add("tile_3")}
-					if (counter ==4) { children[x+y].classList.add("tile_4")}
-					if (counter ==5) { children[x+y].classList.add("tile_5")}
-					if (counter ==6) { children[x+y].classList.add("tile_6")}
-					if (counter ==7) { children[x+y].classList.add("tile_7")}
-					if (counter ==8) { children[x+y].classList.add("tile_8")} */
 				}
-				//else {
-					
-					//children[x+y].classList.remove("hidden");
-					//children[x+y].classList.add("tile");
-				//}
-				gridAdj[x+y] = counter;
+				else if (x==0 && y>0 && y<(rows*columns-9)) {
+					if(children[x+y+1].classList.contains("hasMine")) {counter++;} //Right
+					if(children[x+y-9].classList.contains("hasMine")) {counter++;} //Top
+					if(children[x+y+9].classList.contains("hasMine")) {counter++;} //Bottom
+					if(children[x+y-8].classList.contains("hasMine")) {counter++;} //Top Right
+					if(children[x+y+10].classList.contains("hasMine")) {counter++;} //Bottom Right	
+				}
+				else if (y>0 && y<(rows*columns-9) && x== (columns-1)) {
+					if(children[x+y-1].classList.contains("hasMine")) {counter++;} //left
+					if(children[x+y-9].classList.contains("hasMine")) {counter++;} //Top
+					if(children[x+y+9].classList.contains("hasMine")) {counter++;} //Bottom
+					if(children[x+y-10].classList.contains("hasMine")) {counter++;} //Top Left
+					if(children[x+y+8].classList.contains("hasMine")) {counter++;} //Bottom Left
+				}
+				else if (y==(rows*columns-9) && x==0) {
+					if(children[x+y+1].classList.contains("hasMine")) {counter++;} //Right
+					if(children[x+y-9].classList.contains("hasMine")) {counter++;} //Top
+					if(children[x+y-8].classList.contains("hasMine")) {counter++;} //Top Right
+				}
+				else if (y==(rows*columns-9) && x> 0 && x<(columns-1)) {
+					if(children[x+y-1].classList.contains("hasMine")) {counter++;} //left
+					if(children[x+y+1].classList.contains("hasMine")) {counter++;} //Right
+					if(children[x+y-9].classList.contains("hasMine")) {counter++;} //Top
+					if(children[x+y-10].classList.contains("hasMine")) {counter++;} //Top Left
+					if(children[x+y-8].classList.contains("hasMine")) {counter++;} //Top Right
+				}
+				else if (y==(rows*columns-9) && x==(columns-1)) {
+					if(children[x+y-1].classList.contains("hasMine")) {counter++;} //left
+					if(children[x+y-9].classList.contains("hasMine")) {counter++;} //Top
+					if(children[x+y-10].classList.contains("hasMine")) {counter++;} //Top Left				
+				}
+ 				children[x+y].style.adjacent = counter; */
 			}
-			//children[x+y].classList.add("hidden");
 		}
     }
 
@@ -206,7 +343,10 @@ function setDifficulty() {
 
 function startTimer() {
     timeValue = 0;
-    window.setInterval(onTimerTick, 1000);
+    time_id = window.setInterval(onTimerTick, 1000);
+}
+function stopTimer() {
+    window.clearInterval(time_id);
 }
 
 function onTimerTick() {
