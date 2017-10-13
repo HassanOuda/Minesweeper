@@ -11,9 +11,6 @@
 .hasMine {
     value:true;
 }
-.adjacent {
-    counter:0;
-}
 .flag {
     background-image: url("../images/flag.png");
 }

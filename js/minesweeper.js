@@ -1,22 +1,23 @@
 
-var time = 0;
 var time_id;
-var columns = 9;
-var rows = 9;
-var mineCount = 10;
-var grid = document.getElementById("minefield");
-var firstTouch = true;
+var timeValue=0;
+var columns;
+var rows;
+var mineCount;
+var grid;
+var firstTouch;
 var smiley;
-var remaining = mineCount;
+var remaining;
 
 function buildGrid() {
 
     // Fetch grid and clear out old elements.
     grid = document.getElementById("minefield");
     grid.innerHTML = "";
-	document.getElementById("flagCount").innerHTML = remaining;
 	firstTouch = true;
+	setDifficulty();
 	remaining = mineCount;
+	document.getElementById("flagCount").innerHTML = remaining;
     // Build DOM Grid
     var tile;
     for (var y = 0; y < rows; y++) {
@@ -41,7 +42,8 @@ function createTile(x,y) {
 
     tile.classList.add("tile");
     tile.classList.add("hidden");
-	tile.classList.add("adjacent");
+	//tile.classList.add("adjacent");
+	tile.style.adjacent = 0;
     
     tile.addEventListener("auxclick", function(e) { e.preventDefault(); }); // Middle Click
     tile.addEventListener("contextmenu", function(e) { e.preventDefault(); }); // Right Click
@@ -60,7 +62,6 @@ function startGame() {
 
 function smileyDown() {
     smiley = document.getElementById("smiley");
- 
 	smiley.classList.add("face_down");	
 }
 function LimboDown() {
@@ -108,52 +109,52 @@ function isGameOver()
 }
 
 function fillTiles (tile,isLeft) {
-	
 	if (tile.classList.contains("flag") || (isLeft && !tile.classList.contains("hidden"))) { return; }
+
 	if (tile.classList.contains("hasMine"))
 	{
+		tile.classList.add("mine_hit");
+		stopTimer();
+		smiley.classList.add("face_lose");
 		revealBoard();
 		return;
 	}
-	else if (!tile.classList.contains("hidden") && !isLeft)
+	else if (!tile.classList.contains("hidden") && !isLeft) //Already revealed
 	{
 		var mines = areaAdjacent(tile);
 		var flaggedMines = [];
-		for (var i = 0; i < flaggedMines.length; i++)
+		for (var i = 0; i < mines.length; i++)
 		{
 			if (mines[i].classList.contains("flag")) { flaggedMines.push(mines[i]);}
 		}
-	
 		if (tile.style.adjacent === flaggedMines.length)
 		{
-
 			for (var i = 0; i < mines.length; i++)
 			{
-				if (!mines[i].classList.contains("flag") && mines[i].classList.contains("hidden")) {fillTiles(mines[i], true);}
+				if (!mines[i].classList.contains("flag") && mines[i].classList.contains("hidden")) {
+					
+					fillTiles(mines[i], true);}
 			}
 		}
 	}
 	else
 	{
+		
 		tile.classList.remove("hidden");
-		if (tile.style.adjacent === 1) {tile.classList.add("tile_1");}
-		if (tile.style.adjacent === 2) {tile.classList.add("tile_2");}
-		if (tile.style.adjacent === 3) {tile.classList.add("tile_3");}
-		if (tile.style.adjacent === 4) {tile.classList.add("tile_4");}
-		if (tile.style.adjacent === 5) {tile.classList.add("tile_5");}
-		if (tile.style.adjacent === 6) {tile.classList.add("tile_6");}
-		if (tile.style.adjacent === 7) {tile.classList.add("tile_7");}
-		if (tile.style.adjacent === 8) {tile.classList.add("tile_8");}
-		if (tile.style.adjacent==null)
-		{
-			document.getElementById("flagCount").innerHTML = "No";
-		}
-		if (tile.style.adjacent===0)
+		if (tile.style.adjacent == 1) {tile.classList.add("tile_1");}
+		if (tile.style.adjacent == 2) {tile.classList.add("tile_2");}
+		if (tile.style.adjacent == 3) {tile.classList.add("tile_3");}
+		if (tile.style.adjacent == 4) {tile.classList.add("tile_4");}
+		if (tile.style.adjacent == 5) {tile.classList.add("tile_5");}
+		if (tile.style.adjacent == 6) {tile.classList.add("tile_6");}
+		if (tile.style.adjacent == 7) {tile.classList.add("tile_7");}
+		if (tile.style.adjacent == 8) {tile.classList.add("tile_8");}
+		if (tile.style.adjacent==0)
 		{
 			var areaF = areaAdjacent(tile);
 			for (var i = 0; i < areaF.length; i++)
 			{
-				if (areaF[i].style.adjacent===0 || !areaF[i].classList.contains("hasMine"))
+				if (!areaF[i].classList.contains("hasMine"))
 				{
 					fillTiles(areaF[i],true);
 				}
@@ -201,7 +202,6 @@ function areaAdjacent(tile) //8,17,26,35,44,53
 
 
 function handleTileClick(event) {
-
     // Left Click
     if (event.which === 1) {
         //TODO reveal the tile
@@ -216,48 +216,39 @@ function handleTileClick(event) {
 			
 			plantMines(this,x);
 			fillTiles(this,true);
-			//document.getElementById("flagCount").innerHTML = x;
 		}
-		else {
-			if (!this.classList.contains("flag") && !this.classList.contains("tile_1")&& !this.classList.contains("tile_2")
-				&& !this.classList.contains("tile_3")&& !this.classList.contains("tile_4")
-			&& !this.classList.contains("tile_5")&& !this.classList.contains("tile_6")
-			&& !this.classList.contains("tile_7")&& !this.classList.contains("tile_8"))
+		else 
+		{
+			if (this.style.adjacent==null)
 			{
-				if (this.classList.contains("hasMine"))
-				{
-					this.classList.add("mine_hit");
-					stopTimer();
-					smiley.classList.add("face_lose");
-					revealBoard();
-				}
-				else{
-					fillTiles(this,true);
-					//document.getElementById("flagCount").innerHTML = this.style.adjacent;
-				}
+				//document.getElementById("flagCount").innerHTML = "No";
 			}
+			fillTiles(this,true);
 		}
 		firstTouch = false;
-		//document.getElementById("flagCount").innerHTML = firstTouch;
-    }
+	}
     // Middle Click
     else if (event.which === 2) {
         //TODO try to reveal adjacent tiles
-		if (!tile.classList.contains("hidden"))
-		{fillTiles(this,false);}
-		//document.getElementById("flagCount").innerHTML = "yes";
-    }
+		if (!this.classList.contains("hidden"))
+		{
+			fillTiles(this,false);
+		}
+	}
     // Right Click
     else if (event.which === 3) {
         //TODO toggle a tile flag
-		if (this.classList.contains("flag")) {
-			remaining =remaining+1;	
+		if (this.classList.contains("hidden")) {
+			if (this.classList.contains("flag")) {
+				remaining =remaining+1;	
+			}
+			else if (remaining >=0) {
+				remaining =remaining-1;
+			}
+			this.classList.toggle("flag");
+			document.getElementById("flagCount").innerHTML = remaining;
 		}
-		else {
-			remaining =remaining-1;
-		}
-		this.classList.toggle("flag");
-		document.getElementById("flagCount").innerHTML = remaining;
+		
     }
 }
 
@@ -290,7 +281,6 @@ function plantMines(picked,index)
 function scoreAdjacent()
 {
 	var children = grid.children;
-	var string = "";
 	for (var y = 0; y < rows*columns; y=y+columns) {
 		for (var x = 0; x < columns; x++) {
 			var cen = 0;
@@ -306,18 +296,14 @@ function scoreAdjacent()
 				else {
 					children[x+y].style.adjacent =0; 
 				}
-				string += children[x+y].style.adjacent.toString() + " ";
 			}
 			else
 			{
-				string +=  "* ";
+				children[x+y].style.adjacent =0; 
 			}
 			
 		}
-		string+="&#13;&#10;";
     }
-	document.getElementById("testing").innerHTML = string;
-
 }
 
 function setDifficulty() {
